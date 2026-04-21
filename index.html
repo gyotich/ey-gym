@@ -3,29 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EY-GYM PRO</title>
+    <title>EY-GYM | Sistema Integral</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { background-color: #020617; color: #f1f5f9; font-family: sans-serif; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-        .tab-active { border-bottom: 3px solid #38bdf8; color: #38bdf8; }
-        input { background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #38bdf8; text-align: center; }
+        .tab-active { border-bottom: 3px solid #38bdf8; color: #38bdf8; font-weight: bold; }
+        input { background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #facc15; text-align: center; }
+        .done { border-left: 8px solid #22c55e !important; background: rgba(34, 197, 94, 0.1); }
     </style>
 </head>
-<body class="p-4 pb-24">
+<body class="p-4 pb-32">
 
-    <!-- LOGIN -->
+    <!-- PANTALLA LOGIN -->
     <div id="login-screen" class="min-h-screen flex flex-col justify-center items-center">
-        <h1 class="text-4xl font-black text-blue-500 mb-8 italic">EY-GYM</h1>
+        <h1 class="text-5xl font-black text-blue-500 mb-2 italic">EY-GYM</h1>
+        <p class="text-slate-500 mb-8 text-xs tracking-tighter">SISTEMA DE GESTIÓN DE RENDIMIENTO</p>
         <div class="glass p-8 rounded-3xl w-full max-w-sm shadow-2xl">
             <select id="user-select" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl mb-6 text-lg">
                 <option value="Gabriel">Gabriel Yotich</option>
                 <option value="Paula">Paula Acevedo</option>
             </select>
-            <button onclick="document.getElementById('file-input').click()" class="w-full bg-slate-800 p-3 rounded-xl mb-3 text-sm font-bold border border-slate-600">📂 SUBIR PLANILLA EXCEL</button>
+            <button onclick="document.getElementById('file-input').click()" class="w-full bg-slate-800 p-3 rounded-xl mb-3 text-sm border border-slate-600 font-bold">📂 CARGAR PLANILLA EXCEL</button>
             <input type="file" id="file-input" class="hidden" accept=".xlsx, .xls">
-            <button onclick="startApp()" class="w-full bg-blue-600 p-4 rounded-xl font-bold text-lg shadow-lg">EMPEZAR RUTINA</button>
+            <button onclick="startApp()" class="w-full bg-blue-600 p-4 rounded-xl font-bold text-lg shadow-lg">INGRESAR AL SISTEMA</button>
         </div>
     </div>
 
@@ -33,13 +35,28 @@
     <div id="main-app" class="hidden">
         <header class="flex justify-between items-center mb-6">
             <h2 id="user-name" class="text-2xl font-bold text-blue-400"></h2>
-            <button onclick="location.reload()" class="text-xs text-slate-500 uppercase font-bold">Cerrar Sesión</button>
+            <button onclick="saveAll()" id="btn-save" class="bg-green-600 px-4 py-2 rounded-xl font-bold text-xs uppercase shadow-lg shadow-green-900/20">Guardar Sesión</button>
         </header>
 
-        <div class="flex justify-between mb-6 border-b border-slate-800">
-            <button id="btn-dia1" onclick="renderDay(1)" class="day-btn pb-2 px-4 font-bold">DÍA 1</button>
-            <button id="btn-dia2" onclick="renderDay(2)" class="day-btn pb-2 px-4 font-bold">DÍA 2</button>
-            <button id="btn-dia3" onclick="renderDay(3)" class="day-btn pb-2 px-4 font-bold">DÍA 3</button>
+        <!-- MÓDULO BIOMÉTRICO -->
+        <div class="glass p-4 rounded-2xl mb-6 border-b-4 border-yellow-500">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="flex flex-col">
+                    <span class="text-[9px] text-slate-400 uppercase">Peso Actual (kg)</span>
+                    <input type="number" id="bio-peso" inputmode="numeric" value="95" class="text-2xl p-1">
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-[9px] text-slate-400 uppercase">Pulsaciones (bpm)</span>
+                    <input type="number" id="bio-bpm" inputmode="numeric" value="83" class="text-2xl p-1 text-red-400">
+                </div>
+            </div>
+        </div>
+
+        <!-- SELECTOR DE DÍA -->
+        <div class="flex justify-around mb-6 border-b border-slate-800">
+            <button id="btn-dia1" onclick="renderDay(1)" class="day-btn pb-2 px-4 text-sm uppercase">Día 1</button>
+            <button id="btn-dia2" onclick="renderDay(2)" class="day-btn pb-2 px-4 text-sm uppercase">Día 2</button>
+            <button id="btn-dia3" onclick="renderDay(3)" class="day-btn pb-2 px-4 text-sm uppercase">Día 3</button>
         </div>
 
         <div id="workout-list" class="space-y-4"></div>
@@ -48,6 +65,7 @@
     <script>
         let rawData = [];
         let currentUser = "";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylIZmWX4rr6vZ-z11qrHUsgo071XKS3n38f1NMEhcJkX8w1HMG_HCuE0AYMXP0GsBN/exec"; // <--- PEGAR URL ACÁ
 
         document.getElementById('file-input').addEventListener('change', function(e) {
             const reader = new FileReader();
@@ -56,7 +74,7 @@
                 const workbook = XLSX.read(data, {type: 'array'});
                 rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 localStorage.setItem('gym_db', JSON.stringify(rawData));
-                alert("Rutina actualizada correctamente.");
+                alert("Base de datos de entrenamiento actualizada.");
             };
             reader.readAsArrayBuffer(e.target.files[0]);
         });
@@ -64,7 +82,7 @@
         function startApp() {
             const saved = localStorage.getItem('gym_db');
             if(saved) rawData = JSON.parse(saved);
-            if(rawData.length === 0) return alert("Por favor, subí tu Excel primero.");
+            if(rawData.length === 0) return alert("Por favor, cargue su planilla Excel.");
 
             currentUser = document.getElementById('user-select').value;
             document.getElementById('login-screen').classList.add('hidden');
@@ -76,37 +94,60 @@
         function renderDay(num) {
             document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('tab-active'));
             document.getElementById('btn-dia'+num).classList.add('tab-active');
-
             const container = document.getElementById('workout-list');
             container.innerHTML = "";
 
-            const filtered = rawData.filter(row => row.dia == num);
-
-            filtered.forEach(ej => {
-                const isCinta = ej.Ejercicios.toLowerCase().includes('cinta');
+            rawData.filter(row => row.dia == num).forEach((ej, i) => {
                 const card = document.createElement('div');
-                card.className = "glass p-4 rounded-2xl border-l-4 " + (isCinta ? "border-green-500" : "border-blue-500");
-                
-                let content = `<div class="flex justify-between font-bold mb-2">
-                    <span>${ej.Ejercicios}</span>
-                    <span class="text-blue-400">${ej.series ? ej.series + 'x' + ej.repeticiones : ''}</span>
-                </div>`;
-
-                if (isCinta) {
-                    content += `<div class="flex gap-4 text-xs text-slate-400">
-                        <span>TIEMPO: <b class="text-green-400">${ej.tiempo || ''}</b></span>
-                        <span>VELOCIDAD: <b class="text-green-400">${ej.velocidad || ''}</b></span>
-                    </div>`;
-                } else {
-                    content += `<div class="grid grid-cols-2 gap-3 mt-2">
-                        <div class="flex flex-col"><span class="text-[9px] text-slate-500 uppercase">Carga Inicial</span><input type="number" value="${ej.Carga || 0}" class="w-full"></div>
-                        <div class="flex flex-col"><span class="text-[9px] text-slate-500 uppercase">Variante/Peso Hoy</span><input type="text" placeholder="Anotar..." class="w-full"></div>
-                    </div>`;
-                }
-
-                card.innerHTML = content;
+                card.id = `card-${i}`;
+                card.className = "glass p-4 rounded-2xl border-l-4 border-blue-500 transition-all";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="font-bold text-slate-100">${ej.Ejercicios}</span>
+                        <input type="checkbox" class="w-6 h-6" onclick="this.parentElement.parentElement.classList.toggle('done')">
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="flex flex-col"><span class="text-[8px] text-slate-500 uppercase">S</span><input type="number" inputmode="numeric" value="${ej.series || 0}"></div>
+                        <div class="flex flex-col"><span class="text-[8px] text-slate-500 uppercase">R</span><input type="number" inputmode="numeric" value="${ej.repeticiones || 0}"></div>
+                        <div class="flex flex-col"><span class="text-[8px] text-slate-500 uppercase">KG</span><input type="number" inputmode="numeric" value="${ej.Carga || 0}"></div>
+                    </div>
+                `;
                 container.appendChild(card);
             });
+        }
+
+        async function saveAll() {
+            const btn = document.getElementById('btn-save');
+            btn.innerText = "PROCESANDO...";
+            btn.disabled = true;
+
+            // 1. Guardar Biometría
+            const bioData = {
+                tipo: 'biometria',
+                usuario: currentUser,
+                peso: document.getElementById('bio-peso').value,
+                bpm: document.getElementById('bio-bpm').value
+            };
+            await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(bioData) });
+
+            // 2. Guardar Musculación (solo los completados)
+            const cards = document.querySelectorAll('.done');
+            for (let card of cards) {
+                const inputs = card.querySelectorAll('input[type="number"]');
+                const data = {
+                    tipo: 'musculacion',
+                    usuario: currentUser,
+                    ejercicio: card.querySelector('span').innerText,
+                    series: inputs[0].value,
+                    repes: inputs[1].value,
+                    carga: inputs[2].value
+                };
+                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+            }
+
+            alert("Datos periciales y biométricos guardados con éxito.");
+            btn.innerText = "GUARDAR SESIÓN";
+            btn.disabled = false;
         }
     </script>
 </body>
