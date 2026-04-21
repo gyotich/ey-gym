@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EY-GYM PRO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { background-color: #020617; color: #f1f5f9; font-family: sans-serif; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .tab-active { border-bottom: 3px solid #38bdf8; color: #38bdf8; }
+    </style>
+</head>
+<body class="p-4 pb-24">
+
+    <!-- PANTALLA INICIAL / LOGIN -->
+    <div id="login-screen" class="min-h-screen flex flex-col justify-center items-center">
+        <h1 class="text-4xl font-black text-blue-500 mb-2">EY-GYM</h1>
+        <p class="text-slate-500 mb-8 uppercase tracking-widest text-xs">Performance Tracker</p>
+        
+        <div class="glass p-8 rounded-3xl w-full max-w-sm shadow-2xl">
+            <label class="block text-xs font-bold text-slate-400 mb-2">SELECCIONAR USUARIO</label>
+            <select id="user-select" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl mb-6 text-lg focus:outline-none focus:border-blue-500">
+                <option value="Gabriel">Gabriel Yotich</option>
+                <option value="Paula">Paula Acevedo</option>
+            </select>
+
+            <button onclick="document.getElementById('file-input').click()" class="w-full bg-slate-800 border border-slate-600 p-3 rounded-xl mb-3 text-sm font-semibold hover:bg-slate-700 transition-colors">
+                📂 CARGAR RUTINA EXCEL
+            </button>
+            <input type="file" id="file-input" class="hidden" accept=".xlsx, .xls">
+
+            <button onclick="startApp()" class="w-full bg-blue-600 p-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-900/20 active:scale-95 transition-transform">
+                ENTRENAR AHORA
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA PRINCIPAL -->
+    <div id="main-app" class="hidden">
+        <header class="flex justify-between items-center mb-6">
+            <div>
+                <h2 id="user-name" class="text-2xl font-bold"></h2>
+                <p class="text-xs text-blue-400 font-mono">83 BPM | Estabilidad detectada</p>
+            </div>
+            <button onclick="location.reload()" class="bg-slate-800 p-2 rounded-lg text-xs">SALIR</button>
+        </header>
+
+        <!-- SELECTOR DE DÍAS -->
+        <div class="flex justify-between mb-6 border-b border-slate-800">
+            <button onclick="filterDay('DIA 1')" class="day-btn pb-2 px-2 tab-active">DÍA 1</button>
+            <button onclick="filterDay('DIA 2')" class="day-btn pb-2 px-2">DÍA 2</button>
+            <button onclick="filterDay('DIA 3')" class="day-btn pb-2 px-2">DÍA 3</button>
+        </div>
+
+        <div id="workout-list" class="space-y-4">
+            <!-- Los ejercicios se cargan aquí -->
+        </div>
+    </div>
+
+    <script>
+        let fullRoutine = [];
+        let currentUser = "";
+
+        // Lector de Excel
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                fullRoutine = XLSX.utils.sheet_to_json(sheet);
+                localStorage.setItem('raw_routine', JSON.stringify(fullRoutine));
+                alert("Rutina de Abril Lima cargada con éxito.");
+            };
+            reader.readAsArrayBuffer(e.target.files[0]);
+        });
+
+        function startApp() {
+            currentUser = document.getElementById('user-select').value;
+            const saved = localStorage.getItem('raw_routine');
+            if(saved) fullRoutine = JSON.parse(saved);
+
+            if(fullRoutine.length === 0) {
+                alert("Por favor, cargá el Excel primero.");
+                return;
+            }
+
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('user-name').innerText = currentUser;
+            filterDay('DIA 1');
+        }
+
+        function filterDay(dayTag) {
+            // Actualizar pestañas
+            document.querySelectorAll('.day-btn').forEach(btn => btn.classList.remove('tab-active'));
+            event.target.classList.add('tab-active');
+
+            const container = document.getElementById('workout-list');
+            container.innerHTML = "";
+
+            // Lógica para encontrar los ejercicios de ese día en el formato del Excel
+            let capturing = false;
+            fullRoutine.forEach((row) => {
+                const cellA = row["Profesor/a: Abril Lima/Nº de Maq."];
+                if (cellA === dayTag) capturing = true;
+                else if (cellA && cellA.includes("DIA") && cellA !== dayTag) capturing = false;
+
+                if (capturing && row["Profesor/a: Abril Lima/Ejercicios"]) {
+                    const ejName = row["Profesor/a: Abril Lima/Ejercicios"];
+                    const reps = row["SEMANA 1/S/rep"] || "";
+                    const carga = row["SEMANA 1/Carga"] || "";
+                    
+                    const card = document.createElement('div');
+                    card.className = "glass p-4 rounded-2xl border-l-4 border-blue-500 shadow-lg";
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="font-bold text-slate-100 flex-1">${ejName}</span>
+                            <span class="text-blue-400 font-mono text-sm">${reps}</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-slate-950/50 p-2 rounded-lg border border-slate-800">
+                                <label class="text-[9px] text-slate-500 block uppercase">Carga (kg)</label>
+                                <input type="number" value="${carga}" class="bg-transparent text-blue-400 w-full font-bold">
+                            </div>
+                            <div class="bg-slate-950/50 p-2 rounded-lg border border-slate-800">
+                                <label class="text-[9px] text-slate-500 block uppercase">Variante</label>
+                                <input type="text" placeholder="Ej: 12-10-8" class="bg-transparent text-slate-300 w-full text-xs">
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
