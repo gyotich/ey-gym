@@ -9,9 +9,10 @@
     <style>
         body { background-color: #020617; color: #f1f5f9; font-family: sans-serif; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-        .tab-active { border-bottom: 3px solid #38bdf8; color: #38bdf8; font-weight: bold; }
-        input { background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #facc15; text-align: center; }
-        .done { border-left: 8px solid #22c55e !important; background: rgba(34, 197, 94, 0.1); }
+        .tab-active { border-bottom: 4px solid #38bdf8; color: #38bdf8; font-weight: bold; }
+        input { background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: #facc15; text-align: center; font-weight: bold; }
+        .label-style { font-size: 11px; color: #ffffff; font-weight: 900; text-transform: uppercase; margin-bottom: 4px; display: block; text-shadow: 1px 1px 2px black; }
+        .done { border-left: 10px solid #22c55e !important; background: rgba(34, 197, 94, 0.15); }
     </style>
 </head>
 <body class="p-4 pb-32">
@@ -19,53 +20,56 @@
     <!-- PANTALLA LOGIN -->
     <div id="login-screen" class="min-h-screen flex flex-col justify-center items-center">
         <h1 class="text-5xl font-black text-blue-500 mb-2 italic">EY-GYM</h1>
-        <p class="text-slate-500 mb-8 text-xs tracking-tighter">SISTEMA DE GESTIÓN DE RENDIMIENTO</p>
-        <div class="glass p-8 rounded-3xl w-full max-w-sm shadow-2xl">
+        <p class="text-slate-500 mb-8 text-[10px] tracking-[0.3em] uppercase">Rendimiento Pericial</p>
+        <div class="glass p-8 rounded-3xl w-full max-w-sm">
             <select id="user-select" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl mb-6 text-lg">
                 <option value="Gabriel">Gabriel Yotich</option>
                 <option value="Paula">Paula Acevedo</option>
             </select>
-            <button onclick="document.getElementById('file-input').click()" class="w-full bg-slate-800 p-3 rounded-xl mb-3 text-sm border border-slate-600 font-bold">📂 CARGAR PLANILLA EXCEL</button>
+            <button onclick="document.getElementById('file-input').click()" class="w-full bg-slate-800 p-3 rounded-xl mb-3 text-sm border border-slate-600 font-bold uppercase">📂 Subir Excel</button>
             <input type="file" id="file-input" class="hidden" accept=".xlsx, .xls">
-            <button onclick="startApp()" class="w-full bg-blue-600 p-4 rounded-xl font-bold text-lg shadow-lg">INGRESAR AL SISTEMA</button>
+            <button onclick="startApp()" class="w-full bg-blue-600 p-4 rounded-xl font-bold text-lg shadow-lg">INGRESAR</button>
         </div>
     </div>
 
     <!-- APP PRINCIPAL -->
     <div id="main-app" class="hidden">
-        <header class="flex justify-between items-center mb-6">
-            <h2 id="user-name" class="text-2xl font-bold text-blue-400"></h2>
-            <button onclick="saveAll()" id="btn-save" class="bg-green-600 px-4 py-2 rounded-xl font-bold text-xs uppercase shadow-lg shadow-green-900/20">Guardar Sesión</button>
+        <header class="flex justify-between items-center mb-4">
+            <div>
+                <h2 id="user-name" class="text-2xl font-black text-blue-400 italic"></h2>
+                <button onclick="location.reload()" class="text-[10px] bg-red-900/30 text-red-400 px-2 py-1 rounded mt-2 font-bold uppercase tracking-widest border border-red-500/20">✕ Cerrar Sesión</button>
+            </div>
+            <button onclick="saveAll()" id="btn-save" class="bg-green-600 px-5 py-3 rounded-2xl font-black text-xs uppercase shadow-xl shadow-green-900/30">Guardar Sesión</button>
         </header>
 
-        <!-- MÓDULO BIOMÉTRICO -->
-        <div class="glass p-4 rounded-2xl mb-6 border-b-4 border-yellow-500">
+        <!-- BIOMETRÍA -->
+        <div class="glass p-4 rounded-2xl mb-6 border-b-4 border-yellow-500 shadow-lg">
             <div class="grid grid-cols-2 gap-4">
                 <div class="flex flex-col">
-                    <span class="text-[9px] text-slate-400 uppercase">Peso Actual (kg)</span>
-                    <input type="number" id="bio-peso" inputmode="numeric" value="95" class="text-2xl p-1">
+                    <span class="label-style text-yellow-500">Peso Inicial (kg)</span>
+                    <input type="number" id="bio-peso" inputmode="numeric" value="95" class="text-3xl p-2">
                 </div>
                 <div class="flex flex-col">
-                    <span class="text-[9px] text-slate-400 uppercase">Pulsaciones (bpm)</span>
-                    <input type="number" id="bio-bpm" inputmode="numeric" value="83" class="text-2xl p-1 text-red-400">
+                    <span class="label-style text-red-400">Pulsaciones (bpm)</span>
+                    <input type="number" id="bio-bpm" inputmode="numeric" value="83" class="text-3xl p-2 text-red-400">
                 </div>
             </div>
         </div>
 
-        <!-- SELECTOR DE DÍA -->
-        <div class="flex justify-around mb-6 border-b border-slate-800">
-            <button id="btn-dia1" onclick="renderDay(1)" class="day-btn pb-2 px-4 text-sm uppercase">Día 1</button>
-            <button id="btn-dia2" onclick="renderDay(2)" class="day-btn pb-2 px-4 text-sm uppercase">Día 2</button>
-            <button id="btn-dia3" onclick="renderDay(3)" class="day-btn pb-2 px-4 text-sm uppercase">Día 3</button>
+        <!-- DÍAS -->
+        <div class="flex justify-between mb-8 border-b border-slate-800 px-2">
+            <button id="btn-dia1" onclick="renderDay(1)" class="day-btn pb-3 px-2 text-xs font-black uppercase">Día 1</button>
+            <button id="btn-dia2" onclick="renderDay(2)" class="day-btn pb-3 px-2 text-xs font-black uppercase">Día 2</button>
+            <button id="btn-dia3" onclick="renderDay(3)" class="day-btn pb-3 px-2 text-xs font-black uppercase">Día 3</button>
         </div>
 
-        <div id="workout-list" class="space-y-4"></div>
+        <div id="workout-list" class="space-y-5"></div>
     </div>
 
     <script>
         let rawData = [];
         let currentUser = "";
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylIZmWX4rr6vZ-z11qrHUsgo071XKS3n38f1NMEhcJkX8w1HMG_HCuE0AYMXP0GsBN/exec"; // <--- PEGAR URL ACÁ
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylIZmWX4rr6vZ-z11qrHUsgo071XKS3n38f1NMEhcJkX8w1HMG_HCuE0AYMXP0GsBN/exec"; // <--- REEMPLAZAR
 
         document.getElementById('file-input').addEventListener('change', function(e) {
             const reader = new FileReader();
@@ -74,7 +78,7 @@
                 const workbook = XLSX.read(data, {type: 'array'});
                 rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 localStorage.setItem('gym_db', JSON.stringify(rawData));
-                alert("Base de datos de entrenamiento actualizada.");
+                alert("Planilla vinculada correctamente.");
             };
             reader.readAsArrayBuffer(e.target.files[0]);
         });
@@ -82,12 +86,11 @@
         function startApp() {
             const saved = localStorage.getItem('gym_db');
             if(saved) rawData = JSON.parse(saved);
-            if(rawData.length === 0) return alert("Por favor, cargue su planilla Excel.");
-
+            if(rawData.length === 0) return alert("Error: No se encontró la planilla.");
             currentUser = document.getElementById('user-select').value;
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
-            document.getElementById('user-name').innerText = currentUser;
+            document.getElementById('user-name').innerText = currentUser.toUpperCase();
             renderDay(1);
         }
 
@@ -98,19 +101,34 @@
             container.innerHTML = "";
 
             rawData.filter(row => row.dia == num).forEach((ej, i) => {
+                const name = ej.Ejercicios.toLowerCase();
+                const isCardio = name.includes('cinta') || name.includes('bici') || name.includes('escalador') || name.includes('cardio') || name.includes('eliptico');
+                
                 const card = document.createElement('div');
                 card.id = `card-${i}`;
-                card.className = "glass p-4 rounded-2xl border-l-4 border-blue-500 transition-all";
+                card.className = "glass p-5 rounded-3xl border-l-[12px] border-blue-600 shadow-md transition-all";
+                
+                let inputsHtml = "";
+                if(isCardio) {
+                    inputsHtml = `
+                        <div class="flex flex-col"><span class="label-style">Veloc.</span><input type="number" step="0.1" inputmode="decimal" value="${ej.velocidad || 5}" class="p-3"></div>
+                        <div class="flex flex-col"><span class="label-style">Nivel/Inc</span><input type="number" inputmode="numeric" value="0" class="p-3"></div>
+                        <div class="flex flex-col"><span class="label-style">Tiempo</span><input type="text" value="${ej.tiempo || '15:00'}" class="p-3"></div>
+                    `;
+                } else {
+                    inputsHtml = `
+                        <div class="flex flex-col"><span class="label-style">Series</span><input type="number" inputmode="numeric" value="${ej.series || 0}" class="p-3 text-blue-400"></div>
+                        <div class="flex flex-col"><span class="label-style">Repes</span><input type="number" inputmode="numeric" value="${ej.repeticiones || 0}" class="p-3 text-blue-400"></div>
+                        <div class="flex flex-col"><span class="label-style">Kilos</span><input type="number" inputmode="numeric" value="${ej.Carga || 0}" class="p-3 text-blue-400"></div>
+                    `;
+                }
+
                 card.innerHTML = `
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="font-bold text-slate-100">${ej.Ejercicios}</span>
-                        <input type="checkbox" class="w-6 h-6" onclick="this.parentElement.parentElement.classList.toggle('done')">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="font-black text-slate-100 text-sm tracking-wide uppercase">${ej.Ejercicios}</span>
+                        <input type="checkbox" class="w-8 h-8 rounded-xl border-2 border-slate-500 bg-slate-900" onclick="this.parentElement.parentElement.classList.toggle('done')">
                     </div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div class="flex flex-col"><span class="text-[8px] text-slate-500 uppercase">S</span><input type="number" inputmode="numeric" value="${ej.series || 0}"></div>
-                        <div class="flex flex-col"><span class="text-[8px] text-slate-500 uppercase">R</span><input type="number" inputmode="numeric" value="${ej.repeticiones || 0}"></div>
-                        <div class="flex flex-col"><span class="text-[8px] text-slate-500 uppercase">KG</span><input type="number" inputmode="numeric" value="${ej.Carga || 0}"></div>
-                    </div>
+                    <div class="grid grid-cols-3 gap-3">${inputsHtml}</div>
                 `;
                 container.appendChild(card);
             });
@@ -118,36 +136,28 @@
 
         async function saveAll() {
             const btn = document.getElementById('btn-save');
-            btn.innerText = "PROCESANDO...";
-            btn.disabled = true;
+            btn.innerText = "ENVIANDO..."; btn.disabled = true;
+            
+            try {
+                // Biometría
+                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
+                    tipo: 'biometria', usuario: currentUser, peso: document.getElementById('bio-peso').value, bpm: document.getElementById('bio-bpm').value
+                })});
 
-            // 1. Guardar Biometría
-            const bioData = {
-                tipo: 'biometria',
-                usuario: currentUser,
-                peso: document.getElementById('bio-peso').value,
-                bpm: document.getElementById('bio-bpm').value
-            };
-            await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(bioData) });
-
-            // 2. Guardar Musculación (solo los completados)
-            const cards = document.querySelectorAll('.done');
-            for (let card of cards) {
-                const inputs = card.querySelectorAll('input[type="number"]');
-                const data = {
-                    tipo: 'musculacion',
-                    usuario: currentUser,
-                    ejercicio: card.querySelector('span').innerText,
-                    series: inputs[0].value,
-                    repes: inputs[1].value,
-                    carga: inputs[2].value
-                };
-                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+                // Musculación
+                const cards = document.querySelectorAll('.done');
+                for (let card of cards) {
+                    const inputs = card.querySelectorAll('input');
+                    await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({
+                        tipo: 'musculacion', usuario: currentUser, ejercicio: card.querySelector('span').innerText,
+                        series: inputs[0].value, repes: inputs[1].value, carga: inputs[2].value
+                    })});
+                }
+                alert("SESIÓN GUARDADA EN EL HISTORIAL");
+            } catch (e) {
+                alert("Error de conexión. Verifique la URL del Script.");
             }
-
-            alert("Datos guardados con éxito.");
-            btn.innerText = "GUARDAR SESIÓN";
-            btn.disabled = false;
+            btn.innerText = "GUARDAR SESIÓN"; btn.disabled = false;
         }
     </script>
 </body>
