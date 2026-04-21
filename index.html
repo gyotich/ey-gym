@@ -10,129 +10,102 @@
         body { background-color: #020617; color: #f1f5f9; font-family: sans-serif; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
         .tab-active { border-bottom: 3px solid #38bdf8; color: #38bdf8; }
+        input { background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #38bdf8; text-align: center; }
     </style>
 </head>
 <body class="p-4 pb-24">
 
-    <!-- PANTALLA INICIAL / LOGIN -->
+    <!-- LOGIN -->
     <div id="login-screen" class="min-h-screen flex flex-col justify-center items-center">
-        <h1 class="text-4xl font-black text-blue-500 mb-2">EY-GYM</h1>
-        <p class="text-slate-500 mb-8 uppercase tracking-widest text-xs">Performance Tracker</p>
-        
+        <h1 class="text-4xl font-black text-blue-500 mb-8 italic">EY-GYM</h1>
         <div class="glass p-8 rounded-3xl w-full max-w-sm shadow-2xl">
-            <label class="block text-xs font-bold text-slate-400 mb-2">SELECCIONAR USUARIO</label>
-            <select id="user-select" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl mb-6 text-lg focus:outline-none focus:border-blue-500">
+            <select id="user-select" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-xl mb-6 text-lg">
                 <option value="Gabriel">Gabriel Yotich</option>
                 <option value="Paula">Paula Acevedo</option>
             </select>
-
-            <button onclick="document.getElementById('file-input').click()" class="w-full bg-slate-800 border border-slate-600 p-3 rounded-xl mb-3 text-sm font-semibold hover:bg-slate-700 transition-colors">
-                📂 CARGAR RUTINA EXCEL
-            </button>
+            <button onclick="document.getElementById('file-input').click()" class="w-full bg-slate-800 p-3 rounded-xl mb-3 text-sm font-bold border border-slate-600">📂 SUBIR PLANILLA EXCEL</button>
             <input type="file" id="file-input" class="hidden" accept=".xlsx, .xls">
-
-            <button onclick="startApp()" class="w-full bg-blue-600 p-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-900/20 active:scale-95 transition-transform">
-                ENTRENAR AHORA
-            </button>
+            <button onclick="startApp()" class="w-full bg-blue-600 p-4 rounded-xl font-bold text-lg shadow-lg">EMPEZAR RUTINA</button>
         </div>
     </div>
 
-    <!-- PANTALLA PRINCIPAL -->
+    <!-- APP PRINCIPAL -->
     <div id="main-app" class="hidden">
         <header class="flex justify-between items-center mb-6">
-            <div>
-                <h2 id="user-name" class="text-2xl font-bold"></h2>
-                <p class="text-xs text-blue-400 font-mono">83 BPM | Estabilidad detectada</p>
-            </div>
-            <button onclick="location.reload()" class="bg-slate-800 p-2 rounded-lg text-xs">SALIR</button>
+            <h2 id="user-name" class="text-2xl font-bold text-blue-400"></h2>
+            <button onclick="location.reload()" class="text-xs text-slate-500 uppercase font-bold">Cerrar Sesión</button>
         </header>
 
-        <!-- SELECTOR DE DÍAS -->
         <div class="flex justify-between mb-6 border-b border-slate-800">
-            <button onclick="filterDay('DIA 1')" class="day-btn pb-2 px-2 tab-active">DÍA 1</button>
-            <button onclick="filterDay('DIA 2')" class="day-btn pb-2 px-2">DÍA 2</button>
-            <button onclick="filterDay('DIA 3')" class="day-btn pb-2 px-2">DÍA 3</button>
+            <button id="btn-dia1" onclick="renderDay(1)" class="day-btn pb-2 px-4 font-bold">DÍA 1</button>
+            <button id="btn-dia2" onclick="renderDay(2)" class="day-btn pb-2 px-4 font-bold">DÍA 2</button>
+            <button id="btn-dia3" onclick="renderDay(3)" class="day-btn pb-2 px-4 font-bold">DÍA 3</button>
         </div>
 
-        <div id="workout-list" class="space-y-4">
-            <!-- Los ejercicios se cargan aquí -->
-        </div>
+        <div id="workout-list" class="space-y-4"></div>
     </div>
 
     <script>
-        let fullRoutine = [];
+        let rawData = [];
         let currentUser = "";
 
-        // Lector de Excel
         document.getElementById('file-input').addEventListener('change', function(e) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, {type: 'array'});
-                const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                fullRoutine = XLSX.utils.sheet_to_json(sheet);
-                localStorage.setItem('raw_routine', JSON.stringify(fullRoutine));
-                alert("Rutina de Abril Lima cargada con éxito.");
+                rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                localStorage.setItem('gym_db', JSON.stringify(rawData));
+                alert("Rutina actualizada correctamente.");
             };
             reader.readAsArrayBuffer(e.target.files[0]);
         });
 
         function startApp() {
+            const saved = localStorage.getItem('gym_db');
+            if(saved) rawData = JSON.parse(saved);
+            if(rawData.length === 0) return alert("Por favor, subí tu Excel primero.");
+
             currentUser = document.getElementById('user-select').value;
-            const saved = localStorage.getItem('raw_routine');
-            if(saved) fullRoutine = JSON.parse(saved);
-
-            if(fullRoutine.length === 0) {
-                alert("Por favor, cargá el Excel primero.");
-                return;
-            }
-
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
             document.getElementById('user-name').innerText = currentUser;
-            filterDay('DIA 1');
+            renderDay(1);
         }
 
-        function filterDay(dayTag) {
-            // Actualizar pestañas
-            document.querySelectorAll('.day-btn').forEach(btn => btn.classList.remove('tab-active'));
-            event.target.classList.add('tab-active');
+        function renderDay(num) {
+            document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('tab-active'));
+            document.getElementById('btn-dia'+num).classList.add('tab-active');
 
             const container = document.getElementById('workout-list');
             container.innerHTML = "";
 
-            // Lógica para encontrar los ejercicios de ese día en el formato del Excel
-            let capturing = false;
-            fullRoutine.forEach((row) => {
-                const cellA = row["Profesor/a: Abril Lima/Nº de Maq."];
-                if (cellA === dayTag) capturing = true;
-                else if (cellA && cellA.includes("DIA") && cellA !== dayTag) capturing = false;
+            const filtered = rawData.filter(row => row.dia == num);
 
-                if (capturing && row["Profesor/a: Abril Lima/Ejercicios"]) {
-                    const ejName = row["Profesor/a: Abril Lima/Ejercicios"];
-                    const reps = row["SEMANA 1/S/rep"] || "";
-                    const carga = row["SEMANA 1/Carga"] || "";
-                    
-                    const card = document.createElement('div');
-                    card.className = "glass p-4 rounded-2xl border-l-4 border-blue-500 shadow-lg";
-                    card.innerHTML = `
-                        <div class="flex justify-between items-start mb-3">
-                            <span class="font-bold text-slate-100 flex-1">${ejName}</span>
-                            <span class="text-blue-400 font-mono text-sm">${reps}</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="bg-slate-950/50 p-2 rounded-lg border border-slate-800">
-                                <label class="text-[9px] text-slate-500 block uppercase">Carga (kg)</label>
-                                <input type="number" value="${carga}" class="bg-transparent text-blue-400 w-full font-bold">
-                            </div>
-                            <div class="bg-slate-950/50 p-2 rounded-lg border border-slate-800">
-                                <label class="text-[9px] text-slate-500 block uppercase">Variante</label>
-                                <input type="text" placeholder="Ej: 12-10-8" class="bg-transparent text-slate-300 w-full text-xs">
-                            </div>
-                        </div>
-                    `;
-                    container.appendChild(card);
+            filtered.forEach(ej => {
+                const isCinta = ej.Ejercicios.toLowerCase().includes('cinta');
+                const card = document.createElement('div');
+                card.className = "glass p-4 rounded-2xl border-l-4 " + (isCinta ? "border-green-500" : "border-blue-500");
+                
+                let content = `<div class="flex justify-between font-bold mb-2">
+                    <span>${ej.Ejercicios}</span>
+                    <span class="text-blue-400">${ej.series ? ej.series + 'x' + ej.repeticiones : ''}</span>
+                </div>`;
+
+                if (isCinta) {
+                    content += `<div class="flex gap-4 text-xs text-slate-400">
+                        <span>TIEMPO: <b class="text-green-400">${ej.tiempo || ''}</b></span>
+                        <span>VELOCIDAD: <b class="text-green-400">${ej.velocidad || ''}</b></span>
+                    </div>`;
+                } else {
+                    content += `<div class="grid grid-cols-2 gap-3 mt-2">
+                        <div class="flex flex-col"><span class="text-[9px] text-slate-500 uppercase">Carga Inicial</span><input type="number" value="${ej.Carga || 0}" class="w-full"></div>
+                        <div class="flex flex-col"><span class="text-[9px] text-slate-500 uppercase">Variante/Peso Hoy</span><input type="text" placeholder="Anotar..." class="w-full"></div>
+                    </div>`;
                 }
+
+                card.innerHTML = content;
+                container.appendChild(card);
             });
         }
     </script>
